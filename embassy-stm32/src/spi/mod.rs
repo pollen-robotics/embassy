@@ -152,6 +152,41 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
     }
 
 
+    pub fn new_pulldown(
+        peri: impl Peripheral<P = T> + 'd,
+        sck: impl Peripheral<P = impl SckPin<T>> + 'd,
+        mosi: impl Peripheral<P = impl MosiPin<T>> + 'd,
+        miso: impl Peripheral<P = impl MisoPin<T>> + 'd,
+        txdma: impl Peripheral<P = Tx> + 'd,
+        rxdma: impl Peripheral<P = Rx> + 'd,
+        config: Config,
+    ) -> Self {
+        into_ref!(peri, sck, mosi, miso);
+
+        let sck_pull_mode = match config.mode.polarity {
+            Polarity::IdleLow => Pull::Down,
+            Polarity::IdleHigh => Pull::Up,
+        };
+
+        sck.set_as_af_pull(sck.af_num(), AFType::OutputPushPull, sck_pull_mode);
+        sck.set_speed(crate::gpio::Speed::VeryHigh);
+        mosi.set_as_af_pull(mosi.af_num(), AFType::OutputPushPull,Pull::Down);
+        mosi.set_speed(crate::gpio::Speed::VeryHigh);
+        miso.set_as_af_pull(miso.af_num(), AFType::Input,Pull::Down);
+        miso.set_speed(crate::gpio::Speed::VeryHigh);
+
+        Self::new_inner(
+            peri,
+            Some(sck.map_into()),
+            Some(mosi.map_into()),
+            Some(miso.map_into()),
+            txdma,
+            rxdma,
+            config,
+        )
+    }
+
+
     pub fn new_rxonly(
         peri: impl Peripheral<P = T> + 'd,
         sck: impl Peripheral<P = impl SckPin<T>> + 'd,
