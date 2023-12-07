@@ -23,9 +23,11 @@ use embassy_sync::blocking_mutex::raw::RawMutex;
 use embassy_sync::blocking_mutex::Mutex;
 use embedded_hal_1::digital::OutputPin;
 use embedded_hal_1::spi::{self, Operation, SpiBus};
-
+use defmt::debug;
 use crate::shared_bus::SpiDeviceError;
 use crate::SetConfig;
+
+
 
 /// SPI device on a shared bus.
 pub struct SpiDevice<'a, M: RawMutex, BUS, CS> {
@@ -141,6 +143,9 @@ pub struct SpiDeviceWithConfig<'a, M: RawMutex, BUS: SetConfig, CS> {
 impl<'a, M: RawMutex, BUS: SetConfig, CS> SpiDeviceWithConfig<'a, M, BUS, CS> {
     /// Create a new `SpiDeviceWithConfig`.
     pub fn new(bus: &'a Mutex<M, RefCell<BUS>>, cs: CS, config: BUS::Config) -> Self {
+	// debug!("SpiDeviceWithConfig::new config: {:?}", config.mode);
+
+
         Self { bus, cs, config }
     }
 }
@@ -163,8 +168,10 @@ where
     fn transaction(&mut self, operations: &mut [Operation<'_, u8>]) -> Result<(), Self::Error> {
         self.bus.lock(|bus| {
             let mut bus = bus.borrow_mut();
+
             bus.set_config(&self.config).map_err(|_| SpiDeviceError::Config)?;
-            self.cs.set_low().map_err(SpiDeviceError::Cs)?;
+
+	    self.cs.set_low().map_err(SpiDeviceError::Cs)?;
 
             let op_res = operations.iter_mut().try_for_each(|op| match op {
                 Operation::Read(buf) => bus.read(buf),
