@@ -385,9 +385,6 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
         });
 
 
-	#[cfg(any(spi_v1, spi_f1, spi_v2))]
-	debug!("TATA CFG V1 F1 V2");
-
         #[cfg(any(spi_v3, spi_v4, spi_v5))]
         {
 	    /*
@@ -411,10 +408,13 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
                 w.set_cpol(cpol);
                 w.set_lsbfirst(lsbfirst);
             });
-            T::REGS.cr1().modify(|w| {
+            T::REGS.cfg1().modify(|w| {
                 w.set_mbr(br);
-		w.set_spe(true);
             });
+            T::REGS.cr1().modify(|w| {
+                w.set_spe(true);
+            });
+
 
 
 	    /*
