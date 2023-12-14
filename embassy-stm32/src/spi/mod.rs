@@ -402,7 +402,7 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
 	     */
 
 
-            T::REGS.cfg1().modify(|w| {
+            T::REGS.cr1().modify(|w| {
                 w.set_spe(false);
             });
 
@@ -411,7 +411,7 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
                 w.set_cpol(cpol);
                 w.set_lsbfirst(lsbfirst);
             });
-            T::REGS.cfg1().modify(|w| {
+            T::REGS.cr1().modify(|w| {
                 w.set_mbr(br);
 		w.set_spe(true);
             });
