@@ -401,12 +401,29 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
             });
 	     */
 
+
+            T::REGS.cfg1().modify(|w| {
+                w.set_spe(false);
+            });
+
+            T::REGS.cfg2().modify(|w| {
+                w.set_cpha(cpha);
+                w.set_cpol(cpol);
+                w.set_lsbfirst(lsbfirst);
+            });
+            T::REGS.cfg1().modify(|w| {
+                w.set_mbr(br);
+		w.set_spe(true);
+            });
+
+
+	    /*
 	    //Debug, full config
 	    let _c = self.get_current_config();
 	    if _c.mode != config.mode{
-		// debug!("TATA change config");
 
 
+		//FIXME set_config hack
 		T::enable_and_reset();
 
 		T::REGS.ifcr().write(|w| w.0 = 0xffff_ffff);
@@ -439,6 +456,8 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
                     w.set_spe(true);
 		});
 	    }
+	    ////
+	    */
 
 
         }
