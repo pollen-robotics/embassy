@@ -313,25 +313,6 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
 
 
         }
-	// let s=Self {
-        //     _peri: peri,
-        //     sck,
-        //     mosi,
-        //     miso,
-        //     txdma,
-        //     rxdma,
-        //     current_word_size: <u8 as sealed::Word>::CONFIG,
-        // };
-	// let _c = s.get_current_config();
-	// match _c.mode{
-	//     MODE_0 => debug!("YOYO after MODE_0"),
-	//     MODE_1 => debug!("YOYO after MODE_1"),
-	//     MODE_2 => debug!("YOYO after MODE_2"),
-	//     MODE_3 => debug!("YOYO after MODE_3"),
-	//     _ => debug!("YOYO after MODE_?"),
-
-	// }
-	// s
 
         Self {
             _peri: peri,
@@ -346,26 +327,6 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
 
     /// Reconfigures it with the supplied config.
     pub fn set_config(&mut self, config: &Config) -> Result<(), ()> {
-	// debug!("TATA config: {:?}",config.mode as u8);
-
-	// let _c = self.get_current_config();
-	// match _c.mode{
-	//     MODE_0 => debug!("TATA current MODE_0"),
-	//     MODE_1 => debug!("TATA current MODE_1"),
-	//     MODE_2 => debug!("TATA current MODE_2"),
-	//     MODE_3 => debug!("TATA current MODE_3"),
-	//     _ => debug!("TATA current MODE_?"),
-
-	// }
-
-	// match config.mode{
-	//     MODE_0 => debug!("TATA MODE_0"),
-	//     MODE_1 => debug!("TATA MODE_1"),
-	//     MODE_2 => debug!("TATA MODE_2"),
-	//     MODE_3 => debug!("TATA MODE_3"),
-	//     _ => debug!("TATA MODE_?"),
-
-	// }
 
 	let cpha = config.raw_phase();
         let cpol = config.raw_polarity();
@@ -376,7 +337,16 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
         let freq = config.frequency;
         let br = compute_baud_rate(pclk, freq);
 
+	// Disable SPI to be able to change configuration
+        T::REGS.cr1().modify(|w| {
+            w.set_spe(false);
+        });
+
         #[cfg(any(spi_v1, spi_f1, spi_v2))]
+        T::REGS.cr1().modify(|w| {
+            w.set_spe(false);
+        });
+
         T::REGS.cr1().modify(|w| {
             w.set_cpha(cpha);
             w.set_cpol(cpol);
@@ -387,21 +357,6 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
 
         #[cfg(any(spi_v3, spi_v4, spi_v5))]
         {
-	    /*
-            T::REGS.cfg2().modify(|w| {
-                w.set_cpha(cpha);
-                w.set_cpol(cpol);
-                w.set_lsbfirst(lsbfirst);
-            });
-            T::REGS.cfg1().modify(|w| {
-                w.set_mbr(br);
-            });
-	     */
-
-
-            T::REGS.cr1().modify(|w| {
-                w.set_spe(false);
-            });
 
             T::REGS.cfg2().modify(|w| {
                 w.set_cpha(cpha);
@@ -411,67 +366,15 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
             T::REGS.cfg1().modify(|w| {
                 w.set_mbr(br);
             });
-            T::REGS.cr1().modify(|w| {
-                w.set_spe(true);
-            });
-
-
-
-	    /*
-	    //Debug, full config
-	    let _c = self.get_current_config();
-	    if _c.mode != config.mode{
-
-
-		//FIXME set_config hack
-		T::enable_and_reset();
-
-		T::REGS.ifcr().write(|w| w.0 = 0xffff_ffff);
-		T::REGS.cfg2().modify(|w| {
-                    //w.set_ssoe(true);
-                    w.set_ssoe(false);
-                    w.set_cpha(cpha);
-                    w.set_cpol(cpol);
-                    w.set_lsbfirst(lsbfirst);
-                    w.set_ssm(true);
-                    w.set_master(vals::Master::MASTER);
-                    w.set_comm(vals::Comm::FULLDUPLEX);
-                    w.set_ssom(vals::Ssom::ASSERTED);
-                    w.set_midi(0);
-                    w.set_mssi(0);
-                    w.set_afcntr(vals::Afcntr::CONTROLLED);
-                    w.set_ssiop(vals::Ssiop::ACTIVEHIGH);
-		});
-		T::REGS.cfg1().modify(|w| {
-                    w.set_crcen(false);
-                    w.set_mbr(br);
-                    w.set_dsize(<u8 as sealed::Word>::CONFIG);
-                    w.set_fthlv(vals::Fthlv::ONEFRAME);
-		});
-		T::REGS.cr2().modify(|w| {
-                    w.set_tsize(0);
-		});
-		T::REGS.cr1().modify(|w| {
-                    w.set_ssi(false);
-                    w.set_spe(true);
-		});
-	    }
-	    ////
-	    */
 
 
         }
 
+	// Enable SPI back after configure
+        T::REGS.cr1().modify(|w| {
+            w.set_spe(true);
+        });
 
-	// let _c = self.get_current_config();
-	// match _c.mode{
-	//     MODE_0 => debug!("TATA after MODE_0"),
-	//     MODE_1 => debug!("TATA after MODE_1"),
-	//     MODE_2 => debug!("TATA after MODE_2"),
-	//     MODE_3 => debug!("TATA after MODE_3"),
-	//     _ => debug!("TATA after MODE_?"),
-
-	// }
 
 
         Ok(())
