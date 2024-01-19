@@ -337,26 +337,33 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
         let freq = config.frequency;
         let br = compute_baud_rate(pclk, freq);
 
-	// Disable SPI to be able to change configuration
-        T::REGS.cr1().modify(|w| {
-            w.set_spe(false);
-        });
 
         #[cfg(any(spi_v1, spi_f1, spi_v2))]
-        T::REGS.cr1().modify(|w| {
-            w.set_spe(false);
-        });
+	{
+	// Disable SPI to be able to change configuration
+            T::REGS.cr1().modify(|w| {
+		w.set_spe(false);
+            });
 
-        T::REGS.cr1().modify(|w| {
-            w.set_cpha(cpha);
-            w.set_cpol(cpol);
-            w.set_br(br);
-            w.set_lsbfirst(lsbfirst);
-        });
+            T::REGS.cr1().modify(|w| {
+		w.set_cpha(cpha);
+		w.set_cpol(cpol);
+		w.set_br(br);
+		w.set_lsbfirst(lsbfirst);
+            });
 
+	    // Enable SPI back after configure
+            T::REGS.cr1().modify(|w| {
+		w.set_spe(true);
+            });
+	}
 
         #[cfg(any(spi_v3, spi_v4, spi_v5))]
         {
+	    // Disable SPI to be able to change configuration
+            T::REGS.cr1().modify(|w| {
+		w.set_spe(false);
+            });
 
             T::REGS.cfg2().modify(|w| {
                 w.set_cpha(cpha);
@@ -367,13 +374,12 @@ impl<'d, T: Instance, Tx, Rx> Spi<'d, T, Tx, Rx> {
                 w.set_mbr(br);
             });
 
+	    // Enable SPI back after configure
+            T::REGS.cr1().modify(|w| {
+		w.set_spe(true);
+            });
 
         }
-
-	// Enable SPI back after configure
-        T::REGS.cr1().modify(|w| {
-            w.set_spe(true);
-        });
 
 
 
